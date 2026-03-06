@@ -1,0 +1,767 @@
+openapi: 3.0.4
+info:
+  title: SNS Service API
+  description: |
+    SNS 백엔드 API 명세 (v1)
+    
+    ## 인증
+    - `POST /api/v1/auth/login` 으로 Access Token 발급
+    - 이후 모든 인증 필요 요청에 `Authorization: Bearer <token>` 헤더 포함
+    
+    ## 페이지네이션
+    - 페이지네이션 사용 시 `page` 파라미터에 페이지 번호를 전달
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local Development Server
+  - url: https://
+    description: Production Server
+
+tags:
+  - name: Auth
+    description: 인증 (회원가입, 로그인, 토큰 재발급)
+  - name: Users
+    description: 사용자 프로필
+  - name: Posts
+    description: 게시물 CRUD
+  - name: Likes
+    description: 좋아요
+  - name: Comments
+    description: 댓글
+  - name: Follows
+    description: 팔로우/언팔로우
+  - name: Bookmarks
+    description: 북마크
+
+# ─────────────────────────────────────────
+# Paths
+# ─────────────────────────────────────────
+paths:
+  # ── Auth ──────────────────────────────
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: 회원가입
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+            example:
+              username: "seungyeon"
+              email: "seungyeon@example.com"
+              password: "test1234!"
+      responses:
+        '201':
+          description: 회원가입 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: 로그인
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: "john@example.com"
+              password: "Password1!"
+      responses:
+        '200':
+          description: 로그인 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Access Token 재발급
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: 토큰 재발급 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: 로그아웃 (Refresh Token 무효화)
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: 로그아웃 성공
+
+  # ── Users ─────────────────────────────
+  /users/my-profile:
+    get:
+      tags: [Users]
+      summary: 내 프로필 조회
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 프로필 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+
+    patch:
+      tags: [Users]
+      summary: 내 프로필 수정
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: 프로필 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+
+  /users/{userId}:
+    get:
+      tags: [Users]
+      summary: 특정 사용자 프로필 조회
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: 프로필 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Posts ─────────────────────────────
+  /posts:
+    post:
+      tags: [Posts]
+      summary: 게시물 작성
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [images]
+              properties:
+                caption:
+                  type: string
+                  maxLength: 2200
+                  description: 게시물 내용
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  minItems: 1
+                  maxItems: 10
+                  description: 이미지 파일 (JPEG/PNG/WEBP, 최대 10MB/장)
+      responses:
+        '201':
+          description: 게시물 작성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /posts/feed:
+    get:
+      tags: [Posts]
+      summary: 홈 피드 조회 (팔로잉 기반)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters?page='
+        - $ref: '#/components/parameters?size='
+      responses:
+        '200':
+          description: 피드 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCursorPage'
+
+  /posts/{postId}:
+    get:
+      tags: [Posts]
+      summary: 게시물 단건 조회
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: 게시물 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Posts]
+      summary: 게시물 수정 (캡션만)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                caption:
+                  type: string
+                  maxLength: 2200
+      responses:
+        '200':
+          description: 게시물 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    delete:
+      tags: [Posts]
+      summary: 게시물 삭제 (본인만)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '204':
+          description: 삭제 성공
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /users/{userId}/posts:
+    get:
+      tags: [Posts]
+      summary: 특정 사용자의 게시물 목록 조회
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: 게시물 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCursorPage'
+
+  # ── Likes ─────────────────────────────
+  /posts/{postId}/likes:
+    post:
+      tags: [Likes]
+      summary: 게시물 좋아요 토글 (좋아요/취소)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: 좋아요 상태 변경 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  liked:
+                    type: boolean
+                    description: true=좋아요, false=좋아요 취소
+                  likeCount:
+                    type: integer
+
+    get:
+      tags: [Likes]
+      summary: 게시물 좋아요 수 조회
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: 좋아요 수 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  likeCount:
+                    type: integer
+
+  # ── Comments ──────────────────────────
+  /posts/{postId}/comments:
+    post:
+      tags: [Comments]
+      summary: 댓글 작성
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: 댓글 작성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+
+    get:
+      tags: [Comments]
+      summary: 댓글 목록 조회
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: 댓글 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentCursorPage'
+
+  /comments/{commentId}:
+    delete:
+      tags: [Comments]
+      summary: 댓글 삭제 (본인만)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 댓글 삭제 성공
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ── Follows ───────────────────────────
+  /users/{userId}/follow:
+    post:
+      tags: [Follows]
+      summary: 팔로우 토글 (팔로우/언팔로우)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: 팔로우 상태 변경 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  following:
+                    type: boolean
+                    description: true=팔로우, false=언팔로우
+
+  /users/{userId}/followers:
+    get:
+      tags: [Follows]
+      summary: 팔로워 목록 조회
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: 팔로워 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCursorPage'
+
+  /users/{userId}/following:
+    get:
+      tags: [Follows]
+      summary: 팔로잉 목록 조회
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: 팔로잉 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCursorPage'
+
+  # ── Bookmarks ─────────────────────────
+  /posts/{postId}/bookmarks:
+    post:
+      tags: [Bookmarks]
+      summary: 북마크 토글 (저장/해제)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: 북마크 상태 변경 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bookmarked:
+                    type: boolean
+
+  /bookmarks:
+    get:
+      tags: [Bookmarks]
+      summary: 내 북마크 목록 조회
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: 북마크 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCursorPage'
+
+# ─────────────────────────────────────────
+# Components
+# ─────────────────────────────────────────
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 사용자 Snowflake ID
+    PostId:
+      name: postId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 게시물 Snowflake ID
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: 이전 응답의 nextCursor 값 (없으면 첫 페이지)
+    Size:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 50
+      description: 페이지당 항목 수
+
+  schemas:
+    # ── Request Schemas ──
+    SignupRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9_.]+$'
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          description: 영문+숫자+특수문자 포함
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        bio:
+          type: string
+          maxLength: 150
+
+    CreateCommentRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          maxLength: 1000
+        parentId:
+          type: string
+          description: 대댓글 시 부모 댓글 ID
+
+    # ── Response Schemas ──
+    TokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+          description: Access Token 만료 시간(초)
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    UserProfileResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        bio:
+          type: string
+        profileImageUrl:
+          type: string
+        followerCount:
+          type: integer
+        followingCount:
+          type: integer
+        postCount:
+          type: integer
+        isFollowing:
+          type: boolean
+          description: 현재 로그인 사용자가 팔로우 중인지
+
+    PostResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        author:
+          $ref: '#/components/schemas/UserResponse'
+        caption:
+          type: string
+        images:
+          type: array
+          items:
+            type: object
+            properties:
+              imageUrl:
+                type: string
+              orderIndex:
+                type: integer
+        likeCount:
+          type: integer
+        commentCount:
+          type: integer
+        isLiked:
+          type: boolean
+        isBookmarked:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    CommentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        author:
+          $ref: '#/components/schemas/UserResponse'
+        content:
+          type: string
+        parentId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    # ── Pagination ──
+    CursorMeta:
+      type: object
+      properties:
+        nextCursor:
+          type: string
+          nullable: true
+          description: 다음 페이지 요청에 사용할 커서 (null이면 마지막 페이지)
+        hasNext:
+          type: boolean
+
+    PostCursorPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostResponse'
+        meta:
+          $ref: '#/components/schemas/CursorMeta'
+
+    CommentCursorPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommentResponse'
+        meta:
+          $ref: '#/components/schemas/CursorMeta'
+
+    UserCursorPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserProfileResponse'
+        meta:
+          $ref: '#/components/schemas/CursorMeta'
+
+    # ── Error ──
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "USER_NOT_FOUND"
+        message:
+          type: string
+          example: "해당 사용자를 찾을 수 없습니다."
+        timestamp:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: 잘못된 요청 (유효성 검사 실패)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: 인증 실패
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: 권한 없음
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: 리소스를 찾을 수 없음
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: 중복 데이터 (이메일/username 중복 등)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
