@@ -12,13 +12,11 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                   Spring Boot Application                   │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │  Presentation Layer  (Controller / Filter / Advice)  │   │
+│  │   Controller Layer  (진입점 / 라우팅)                  │   │
 │  ├──────────────────────────────────────────────────────┤   │
-│  │  Application Layer   (Service / UseCase)             │   │
+│  │   Service Layer  (비즈니스 로직)                       │   │
 │  ├──────────────────────────────────────────────────────┤   │
-│  │  Domain Layer        (Entity / Repository Interface) │   │
-│  ├──────────────────────────────────────────────────────┤   │
-│  │  Infrastructure Layer (JPA / Redis / MinIO / Kafka)  │   │
+│  │   Repository Layer  (DB 접근)                         │   │
 │  └──────────────────────────────────────────────────────┘   │
 └────────┬──────────────┬───────────────┬─────────────────────┘
          │              │               │
@@ -30,7 +28,7 @@
                                     Consumer (App)
                                           │
                                           ▼
-                                  MinIO / Cloudflare
+                                   S3 / Cloudflare
                                    (Image Storage)
 ```
 
@@ -93,26 +91,27 @@ src/
 | **Service** | 비즈니스 로직, 트랜잭션 관리 | `@Transactional` 적용 단위 |
 | **Repository** | DB 접근 (Spring Data JPA) | 쿼리 최적화는 여기서 관리 |
 | **Entity** | 도메인 모델, DB 테이블 매핑 | 비즈니스 메서드 포함 가능 |
-| **DTO** | 요청/응답 데이터 전달 객체 | `record` 또는 불변 객체 권장 |
+| **DTO** | 계층 간 요청/응답 데이터 전달 전용 객체 | entity를 controller까지 직접 노출하지 않음 |
 
 <br />
 
 ## 4. 인증 흐름
 
 ```
-[로그인 요청]
+[회원가입 / 로그인]
   Client → POST /api/v1/auth/login
-         → AuthService.login()
-         → 비밀번호 검증 (bcrypt)
-         → Access Token (JWT, 15분) 발급
-         → Refresh Token 생성 → Redis 저장 (key: refresh:{userId})
+         → AuthController
+         → AuthService
+          → [회원가입] 비밀번호 bcrypt 해싱 → User 저장
+          → [로그인] 비밀번호 검증 (bcrypt)
+          → Access Token (JWT, 15분) 발급
+          → Refresh Token 생성 → Redis 저장 (key: refresh:{userId})
          → 응답 반환
 
 [인증이 필요한 요청]
   Client → Authorization: Bearer {accessToken}
-         → JwtAuthFilter → 토큰 검증
+         → JwtAuthFilter → 토큰 유효성 검증
          → SecurityContextHolder에 Authentication 저장
-         → Controller 진입
 
 [토큰 재발급]
   Client → POST /api/v1/auth/refresh (body: refreshToken)
@@ -126,7 +125,7 @@ src/
 
 ```
 [Presigned URL 방식 — 고도화 시 전환]
-  현재(1단계): Client → POST /api/v1/posts (multipart)
+  현재(1단계): Client → POST /api/v1/posts (multipart/form-data)
                      → Server → S3 업로드
                      → S3 URL → DB 저장
 
@@ -150,7 +149,15 @@ src/
 
 ## 7. 페이지네이션 전략
 
-적합한 방식 채택 이후 작성 예정
+Cursor 기반 페이지네이션 을 채택합니다.
+
+Offset 방식과 비교
+| 항목 | Offset (`?page=3`) | Cursor (`?cursor=lastId`) |
+| --- | --- | --- |
+| 구현 난이도 | 쉬움 | 보통 |
+| 데이터 많을 때 성능 | 느림 (앞 데이터 전부 읽고 버림) | 빠름 (인덱스 직접 탐색) |
+| 실시간 데이터 변경 시 | 중복/누락 발생 가능 | 안정적 |
+| SNS 피드 적합성 | 낮음 | 높음 |
 
 <br />
 
