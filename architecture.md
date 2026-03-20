@@ -44,38 +44,91 @@ src/
     └── java/
         └── com.example.instagram/
             │
-            ├── common/                        # 공통 유틸
-            │   ├── config/                    # Spring 설정 (Security, Redis, Kafka, S3)
-            │   ├── exception/                 # GlobalExceptionHandler, CustomException
-            │   ├── response/                  # ApiResponse<T>, ErrorResponse
-            │   ├── util/                      # JwtUtil, CursorUtil, SnowflakeIdGenerator
-            │   └── interceptor/               # AuthInterceptor
-            │
-            ├── domain/
-            │   ├── user/
-            │   │   ├── controller/            # UserController, AuthController
-            │   │   ├── service/               # UserService, AuthService
-            │   │   ├── repository/            # UserRepository (JPA Interface)
-            │   │   ├── entity/                # User.java
-            │   │   └── dto/                   # request/response DTO
+            ├── global/                          # 프로젝트 전역 공통 코드
+            │   ├── config/
+            │   │   ├── SecurityConfig.java      # Spring Security 설정
+            │   │   ├── RedisConfig.java         # Redis 연결 설정
+            │   │   ├── S3Config.java            # AWS S3 설정
+            │   │   └── SwaggerConfig.java       # API 문서 설정
             │   │
-            │   ├── post/
-            │   │   ├── controller/
-            │   │   ├── service/
-            │   │   ├── repository/
-            │   │   ├── entity/                # Post.java, PostImage.java
-            │   │   └── dto/
+            │   ├── exception/
+            │   │   ├── GlobalExceptionHandler.java   # @RestControllerAdvice
+            │   │   ├── CustomException.java           # 커스텀 예외 베이스
+            │   │   └── ErrorCode.java                 # 에러 코드 enum
             │   │
-            │   ├── like/
-            │   ├── comment/
-            │   ├── follow/
-            │   ├── bookmark/
-            │   └── search/                    # (고도화)
+            │   ├── response/
+            │   │   └── ApiResponse.java         # 공통 응답 포맷 { success, data, message }
+            │   │
+            │   ├── security/
+            │   │   ├── JwtTokenProvider.java    # JWT 생성 / 검증
+            │   │   └── JwtAuthFilter.java       # 요청마다 토큰 확인하는 필터
+            │   │
+            │   └── util/
+            │       └── S3Uploader.java          # S3 파일 업로드 유틸
             │
-            └── infrastructure/
-                ├── s3/                        # S3Uploader
-                ├── redis/                     # RedisService
-                └── kafka/                     # KafkaProducer, KafkaConsumer
+            ├── user/                            # 사용자 / 인증
+            │   ├── controller/
+            │   │   ├── AuthController.java      # POST /auth/signup, /auth/login
+            │   │   └── UserController.java      # GET /users/me, PATCH /users/me
+            │   ├── service/
+            │   │   ├── AuthService.java
+            │   │   └── UserService.java
+            │   ├── repository/
+            │   │   └── UserRepository.java      # JpaRepository 상속
+            │   ├── entity/
+            │   │   └── User.java                # @Entity — users 테이블
+            │   └── dto/
+            │       ├── SignupRequest.java
+            │       ├── LoginRequest.java
+            │       ├── LoginResponse.java
+            │       └── UserProfileResponse.java
+            │
+            ├── post/                            # 게시물
+            │   ├── controller/
+            │   │   └── PostController.java
+            │   ├── service/
+            │   │   └── PostService.java
+            │   ├── repository/
+            │   │   ├── PostRepository.java
+            │   │   └── PostImageRepository.java
+            │   ├── entity/
+            │   │   ├── Post.java
+            │   │   └── PostImage.java
+            │   └── dto/
+            │       ├── CreatePostRequest.java
+            │       ├── UpdatePostRequest.java
+            │       └── PostResponse.java
+            │
+            ├── like/                            # 좋아요
+            │   ├── controller/
+            │   │   └── LikeController.java
+            │   ├── service/
+            │   │   └── LikeService.java
+            │   ├── repository/
+            │   │   └── LikeRepository.java
+            │   └── entity/
+            │       └── Like.java
+            │
+            ├── comment/                         # 댓글
+            │   ├── controller/
+            │   ├── service/
+            │   ├── repository/
+            │   ├── entity/
+            │   └── dto/
+            │
+            ├── follow/                          # 팔로우
+            │   ├── controller/
+            │   ├── service/
+            │   ├── repository/
+            │   ├── entity/
+            │   └── dto/
+            │
+            └── bookmark/                        # 북마크
+                ├── controller/
+                ├── service/
+                ├── repository/
+                ├── entity/
+                └── dto/
 ```
 
 > **설계 원칙**: Controller → Service → Repository 단방향 의존성  
