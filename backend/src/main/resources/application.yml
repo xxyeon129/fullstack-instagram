@@ -19,7 +19,7 @@ spring:
       port: 6379
 
 jwt:
-  secret: 01234567890123456789012345678901
+  secret: ${JWT_SECRET}
   access-token-exp-minutes: 15
   refresh-token-exp-days: 7
 

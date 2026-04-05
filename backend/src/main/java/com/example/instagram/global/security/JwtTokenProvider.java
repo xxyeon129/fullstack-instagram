@@ -1,7 +1,6 @@
 package com.example.instagram.global.security;
 
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
@@ -39,7 +38,7 @@ public class JwtTokenProvider {
                 .claim("email", email)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expireAt))
-                .signWith(key, SignatureAlgorithm.HS256)
+                .signWith(key)
                 .compact();
     }
 
@@ -50,7 +49,7 @@ public class JwtTokenProvider {
                 .subject(String.valueOf(userId))
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expireAt))
-                .signWith(key, SignatureAlgorithm.HS256)
+                .signWith(key)
                 .compact();
     }
 

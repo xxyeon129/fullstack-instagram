@@ -3,14 +3,16 @@ package com.example.instagram.global.exception;
 import org.springframework.http.HttpStatus;
 
 public class CustomException extends RuntimeException {
-    private final HttpStatus status;
+    private final ErrorCode errorCode;
 
-    public CustomException(HttpStatus status, String message) {
-        super(message);
-        this.status = status;
+    public CustomException(ErrorCode errorCode) {
+        super(errorCode.getMessage());
+        this.errorCode = errorCode;
     }
 
-    public HttpStatus getStatus() {
-        return status;
+    public ErrorCode getErrorCode() {
+        return errorCode;
     }
+
+    public HttpStatus getStatus() { return errorCode.getHttpStatus(); }
 }

@@ -2,6 +2,7 @@ package com.example.instagram.user.controller;
 
 import com.example.instagram.global.config.SecurityConfig;
 import com.example.instagram.global.exception.CustomException;
+import com.example.instagram.global.exception.ErrorCode;
 import com.example.instagram.global.security.JwtAuthenticationFilter;
 import com.example.instagram.user.dto.AccessTokenResponse;
 import com.example.instagram.user.dto.LoginRequest;
@@ -20,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -55,7 +55,7 @@ class AuthControllerTest {
         @Test
         @DisplayName("정상 요청이면 201과 사용자 정보를 반환한다")
         void 성공() throws Exception {
-            SignupRequest request = new SignupRequest("test@example.com", "password123", "testuser");
+            SignupRequest request = new SignupRequest("test@example.com", "ValidPass1!", "testuser");
             SignupResponse response = new SignupResponse(1L, "test@example.com", "testuser");
 
             given(authService.signup(any(SignupRequest.class))).willReturn(response);
@@ -74,10 +74,10 @@ class AuthControllerTest {
         @Test
         @DisplayName("이메일이 중복되면 409를 반환한다")
         void 이메일_중복_409() throws Exception {
-            SignupRequest request = new SignupRequest("dup@example.com", "password123", "testuser");
+            SignupRequest request = new SignupRequest("dup@example.com", "ValidPass1!", "testuser");
 
             given(authService.signup(any(SignupRequest.class)))
-                    .willThrow(new CustomException(HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다."));
+                    .willThrow(new CustomException(ErrorCode.DUPLICATE_EMAIL));
 
             mockMvc.perform(post("/api/v1/auth/signup")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -90,10 +90,10 @@ class AuthControllerTest {
         @Test
         @DisplayName("사용자명이 중복되면 409를 반환한다")
         void 사용자명_중복_409() throws Exception {
-            SignupRequest request = new SignupRequest("new@example.com", "password123", "dupuser");
+            SignupRequest request = new SignupRequest("new@example.com", "ValidPass1!", "dupuser");
 
             given(authService.signup(any(SignupRequest.class)))
-                    .willThrow(new CustomException(HttpStatus.CONFLICT, "이미 사용 중인 사용자 이름입니다."));
+                    .willThrow(new CustomException(ErrorCode.DUPLICATE_USERNAME));
 
             mockMvc.perform(post("/api/v1/auth/signup")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -106,7 +106,7 @@ class AuthControllerTest {
         @Test
         @DisplayName("이메일 형식이 올바르지 않으면 400을 반환한다")
         void 이메일_형식_오류_400() throws Exception {
-            SignupRequest request = new SignupRequest("invalid-email", "password123", "testuser");
+            SignupRequest request = new SignupRequest("invalid-email", "ValidPass1!", "testuser");
 
             mockMvc.perform(post("/api/v1/auth/signup")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -128,9 +128,21 @@ class AuthControllerTest {
         }
 
         @Test
+        @DisplayName("비밀번호가 복잡도 규칙을 만족하지 않으면 400을 반환한다")
+        void 비밀번호_복잡도_오류_400() throws Exception {
+            SignupRequest request = new SignupRequest("test@example.com", "password123", "testuser");
+
+            mockMvc.perform(post("/api/v1/auth/signup")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.success").value(false));
+        }
+
+        @Test
         @DisplayName("사용자명이 1자이면 400을 반환한다")
         void 사용자명_길이_오류_400() throws Exception {
-            SignupRequest request = new SignupRequest("test@example.com", "password123", "a");
+            SignupRequest request = new SignupRequest("test@example.com", "ValidPass1!", "a");
 
             mockMvc.perform(post("/api/v1/auth/signup")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -168,7 +180,7 @@ class AuthControllerTest {
             LoginRequest request = new LoginRequest("test@example.com", "wrongPassword");
 
             given(authService.login(any(LoginRequest.class)))
-                    .willThrow(new CustomException(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."));
+                    .willThrow(new CustomException(ErrorCode.INVALID_CREDENTIALS));
 
             mockMvc.perform(post("/api/v1/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -218,7 +230,7 @@ class AuthControllerTest {
             RefreshTokenRequest request = new RefreshTokenRequest("invalidToken");
 
             given(authService.refreshAccessToken(any(RefreshTokenRequest.class)))
-                    .willThrow(new CustomException(HttpStatus.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."));
+                    .willThrow(new CustomException(ErrorCode.INVALID_REFRESH_TOKEN));
 
             mockMvc.perform(post("/api/v1/auth/refresh")
                             .contentType(MediaType.APPLICATION_JSON)
