@@ -13,8 +13,15 @@ spring:
       hibernate:
         format_sql: true
 
-  security:
-    enabled: false            # TODO: Security 활성화
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+jwt:
+  secret: 01234567890123456789012345678901
+  access-token-exp-minutes: 15
+  refresh-token-exp-days: 7
 
 server:
   port: 8080
