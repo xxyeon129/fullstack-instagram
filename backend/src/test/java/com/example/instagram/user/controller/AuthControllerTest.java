@@ -2,6 +2,7 @@ package com.example.instagram.user.controller;
 
 import com.example.instagram.global.config.SecurityConfig;
 import com.example.instagram.global.exception.CustomException;
+import com.example.instagram.global.security.JwtAuthenticationFilter;
 import com.example.instagram.user.dto.AccessTokenResponse;
 import com.example.instagram.user.dto.LoginRequest;
 import com.example.instagram.user.dto.LoginResponse;
@@ -10,6 +11,8 @@ import com.example.instagram.user.dto.SignupRequest;
 import com.example.instagram.user.dto.SignupResponse;
 import com.example.instagram.user.service.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.FilterChain;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,6 +37,16 @@ class AuthControllerTest {
     @Autowired private ObjectMapper objectMapper;
 
     @MockitoBean private AuthService authService;
+    @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @BeforeEach
+    void jwtFilterPassesThrough() throws Exception {
+        doAnswer(invocation -> {
+            FilterChain chain = invocation.getArgument(2);
+            chain.doFilter(invocation.getArgument(0), invocation.getArgument(1));
+            return null;
+        }).when(jwtAuthenticationFilter).doFilter(any(), any(), any());
+    }
 
     @Nested
     @DisplayName("POST /api/v1/auth/signup")
