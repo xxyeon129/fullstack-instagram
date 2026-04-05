@@ -7,8 +7,8 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate # 기동 시 엔티티와 DB 스키마 일치 여부만 검증 (DDL 자동 변경 없음)
-    show-sql: true # 실행 SQL 콘솔에 출력
+      ddl-auto: validate       # 기동 시 엔티티와 DB 스키마 일치 여부만 검증 (DDL 자동 변경 없음)
+    show-sql: true            # 실행 SQL 콘솔에 출력
     properties:
       hibernate:
         format_sql: true
