@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:instagram_test;DB_CLOSE_DELAY=-1;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.MySQLDialect
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+jwt:
+  # 로컬/CI에서 환경변수 없이도 테스트 실행 가능
+  secret: ${JWT_SECRET:test-secret-key-must-be-long-enough-for-hmac-sha-256-algorithm-key-bytes}
+  access-token-exp-minutes: 15
+  refresh-token-exp-days: 7
