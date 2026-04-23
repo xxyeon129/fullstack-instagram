@@ -12,9 +12,9 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                   Spring Boot Application                   │
 │  ┌──────────────────────────────────────────────────────┐   │
-│  │   Controller Layer  (진입점 / 라우팅)                  │   │
+│  │   Controller Layer  (진입점 / 라우팅)                   │   │
 │  ├──────────────────────────────────────────────────────┤   │
-│  │   Service Layer  (비즈니스 로직)                       │   │
+│  │   Service Layer  (비즈니스 로직)                        │   │
 │  ├──────────────────────────────────────────────────────┤   │
 │  │   Repository Layer  (DB 접근)                         │   │
 │  └──────────────────────────────────────────────────────┘   │
@@ -34,7 +34,28 @@
 
 <br />
 
-## 2. 패키지 구조 (Package Structure)
+## 2. 현재 구현 상태 (As-Is) vs 목표 구조 (To-Be)
+
+아래 표는 **현재 코드베이스 기준(as-is)** 과 **본 문서의 목표 아키텍처(to-be)** 를 구분해, 구현/문서 간 혼선을 줄이기 위한 체크포인트다.
+
+| 영역 | As-Is (현재 구현) | To-Be (목표 구조) | 정합성/다음 액션 |
+|------|---|---|---|
+| 모듈/범위 | `backend` 단일 모듈 중심 | 기능 확장 가능한 SNS 전체 도메인 구조 | 단일 모듈 유지, 도메인 확장은 점진 적용 |
+| 도메인 구현 범위 | `user`, `post`, `global` 중심 구현 | `like/comment/follow/bookmark/search` 포함 | P0 우선순위부터 순차 구현 (`requirements.md`) |
+| 인증/보안 | JWT + Spring Security, Stateless 인증 | 동일 | 유지 (회귀 테스트 강화) |
+| Refresh Token 저장 | Redis 기반 저장/검증 흐름 사용 | 동일 | 유지 |
+| 이미지 저장 | Local 저장 기본 + S3 구현체 자리(placeholder) | S3(+Cloudflare), Presigned URL 전환 | S3 실제 연동 후 Presigned URL 단계적 전환 |
+| 피드 페이지네이션 | Spring `Pageable` 기반(Offset) | Cursor 기반 페이지네이션 | 피드 API를 Cursor 전략으로 전환 설계 필요 |
+| 데이터/인프라 | MySQL + Redis 사용, Kafka 미도입 | MySQL + Redis + Kafka + Consumer | 이벤트 처리 필요 시 Kafka 도입 |
+| API 응답/예외 | `ApiResponse`, `CustomException` + `ErrorCode` 표준화 | 동일 | 유지 |
+| 관측성 | Actuator/Metrics 설정 미구성(또는 미노출) | Actuator + Micrometer + 대시보드 | 의존성/엔드포인트 정책 확정 후 도입 |
+| 배포/운영 | Docker Compose/CI-CD 파이프라인 문서 대비 미완성 | Compose + GitHub Actions + 배포 자동화 | 로컬 Compose 및 CI 워크플로우 순차 추가 |
+
+> 원칙: 구현 변경 시 이 표와 본문을 함께 갱신해, 문서가 항상 현재 상태를 반영하도록 유지한다.
+
+<br />
+
+## 3. 패키지 구조 (Package Structure)
 
 레이어드 아키텍처(Layered Architecture)를 기반으로 도메인별 패키지를 구성합니다.
 
@@ -136,7 +157,7 @@ src/
 
 <br />
 
-## 3. 레이어 역할 정의
+## 4. 레이어 역할 정의
 
 | 레이어 | 역할 | 규칙 |
 |--------|------|------|
@@ -148,7 +169,7 @@ src/
 
 <br />
 
-## 4. 인증 흐름
+## 5. 인증 흐름
 
 ```
 [회원가입 / 로그인]
@@ -174,7 +195,7 @@ src/
 
 <br />
 
-## 5. 이미지 업로드 흐름 (S3)
+## 6. 이미지 업로드 흐름 (S3)
 
 ```
 [Presigned URL 방식 — 고도화 시 전환]
@@ -190,7 +211,7 @@ src/
 
 <br />
 
-## 6. 캐싱 전략 (Redis Cache)
+## 7. 캐싱 전략 (Redis Cache)
 
 | 대상 | 캐시 키 | TTL | 전략 |
 |------|---------|-----|------|
@@ -200,7 +221,7 @@ src/
 
 <br />
 
-## 7. 페이지네이션 전략
+## 8. 페이지네이션 전략
 
 Cursor 기반 페이지네이션 을 채택합니다.
 
@@ -214,7 +235,7 @@ Offset 방식과 비교
 
 <br />
 
-## 8. Docker Compose 구성
+## 9. Docker Compose 구성
 
 ```yaml
 # docker-compose.yml 구성 컴포넌트
@@ -228,7 +249,7 @@ services:
 
 <br />
 
-## 9. CI/CD — GitHub Actions
+## 10. CI/CD — GitHub Actions
 
 ```
 [main 브랜치 Push / PR]
@@ -242,7 +263,7 @@ services:
 
 <br />
 
-## 10. Observability
+## 11. Observability
 
 | 항목 | 도구 | 엔드포인트 |
 |------|------|-----------|
