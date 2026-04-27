@@ -82,7 +82,7 @@ class PostControllerTest {
 
         @Test
         @DisplayName("이미지와 캡션(선택)으로 등록하면 201과 게시물 정보를 반환한다")
-        void 성공() throws Exception {
+        void success() throws Exception {
             MockMultipartFile image = new MockMultipartFile(
                     "image",
                     "photo.png",
@@ -111,7 +111,7 @@ class PostControllerTest {
 
         @Test
         @DisplayName("존재하는 게시물이면 200과 상세를 반환한다")
-        void 성공() throws Exception {
+        void success() throws Exception {
             given(postService.getById(10L)).willReturn(SAMPLE);
 
             mockMvc.perform(get("/api/v1/posts/10").with(authentication(auth(1L))))
@@ -123,7 +123,7 @@ class PostControllerTest {
 
         @Test
         @DisplayName("없는 게시물이면 404를 반환한다")
-        void 없음_404() throws Exception {
+        void notFoundReturns404() throws Exception {
             given(postService.getById(99L)).willThrow(new CustomException(ErrorCode.POST_NOT_FOUND));
 
             mockMvc.perform(get("/api/v1/posts/99").with(authentication(auth(1L))))
@@ -139,7 +139,7 @@ class PostControllerTest {
 
         @Test
         @DisplayName("페이지네이션으로 목록을 반환한다")
-        void 성공() throws Exception {
+        void success() throws Exception {
             given(postService.findFeed(any())).willReturn(
                     new PageImpl<>(List.of(SAMPLE), PageRequest.of(0, 20), 1)
             );
@@ -157,7 +157,7 @@ class PostControllerTest {
 
         @Test
         @DisplayName("캡션 수정에 성공하면 200을 반환한다")
-        void 성공() throws Exception {
+        void success() throws Exception {
             PostUpdateRequest body = new PostUpdateRequest("new caption");
             given(postService.update(eq(1L), eq(10L), any(PostUpdateRequest.class))).willReturn(SAMPLE);
 
@@ -172,7 +172,7 @@ class PostControllerTest {
 
         @Test
         @DisplayName("캡션이 2200자를 넘으면 400을 반환한다")
-        void 캡션_길이_400() throws Exception {
+        void captionTooLongReturns400() throws Exception {
             String tooLong = "x".repeat(2201);
             PostUpdateRequest body = new PostUpdateRequest(tooLong);
 
@@ -191,7 +191,7 @@ class PostControllerTest {
 
         @Test
         @DisplayName("삭제에 성공하면 200을 반환한다")
-        void 성공() throws Exception {
+        void success() throws Exception {
             mockMvc.perform(delete("/api/v1/posts/10").with(authentication(auth(1L))))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))

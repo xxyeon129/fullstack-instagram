@@ -1,7 +1,9 @@
 # fullstack-instagram
 
 ## 실행 방법
-작성 예정
+- 수동 E2E(회원가입 → 로그인 → 게시글 업로드) 자동 실행:
+  - `cd backend && ./scripts/e2e-auth-login-post.sh`
+  - Docker Desktop(또는 Docker daemon)가 실행 중이어야 합니다.
 
 <br />
 

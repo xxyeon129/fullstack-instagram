@@ -54,7 +54,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("정상 요청이면 201과 사용자 정보를 반환한다")
-        void 성공() throws Exception {
+        void success() throws Exception {
             SignupRequest request = new SignupRequest("test@example.com", "ValidPass1!", "testuser");
             SignupResponse response = new SignupResponse(1L, "test@example.com", "testuser");
 
@@ -73,7 +73,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("이메일이 중복되면 409를 반환한다")
-        void 이메일_중복_409() throws Exception {
+        void duplicateEmailReturns409() throws Exception {
             SignupRequest request = new SignupRequest("dup@example.com", "ValidPass1!", "testuser");
 
             given(authService.signup(any(SignupRequest.class)))
@@ -89,7 +89,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("사용자명이 중복되면 409를 반환한다")
-        void 사용자명_중복_409() throws Exception {
+        void duplicateUsernameReturns409() throws Exception {
             SignupRequest request = new SignupRequest("new@example.com", "ValidPass1!", "dupuser");
 
             given(authService.signup(any(SignupRequest.class)))
@@ -105,7 +105,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("이메일 형식이 올바르지 않으면 400을 반환한다")
-        void 이메일_형식_오류_400() throws Exception {
+        void invalidEmailFormatReturns400() throws Exception {
             SignupRequest request = new SignupRequest("invalid-email", "ValidPass1!", "testuser");
 
             mockMvc.perform(post("/api/v1/auth/signup")
@@ -117,7 +117,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("비밀번호가 8자 미만이면 400을 반환한다")
-        void 비밀번호_길이_오류_400() throws Exception {
+        void shortPasswordReturns400() throws Exception {
             SignupRequest request = new SignupRequest("test@example.com", "short", "testuser");
 
             mockMvc.perform(post("/api/v1/auth/signup")
@@ -129,7 +129,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("비밀번호가 복잡도 규칙을 만족하지 않으면 400을 반환한다")
-        void 비밀번호_복잡도_오류_400() throws Exception {
+        void weakPasswordComplexityReturns400() throws Exception {
             SignupRequest request = new SignupRequest("test@example.com", "password123", "testuser");
 
             mockMvc.perform(post("/api/v1/auth/signup")
@@ -141,7 +141,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("사용자명이 1자이면 400을 반환한다")
-        void 사용자명_길이_오류_400() throws Exception {
+        void shortUsernameReturns400() throws Exception {
             SignupRequest request = new SignupRequest("test@example.com", "ValidPass1!", "a");
 
             mockMvc.perform(post("/api/v1/auth/signup")
@@ -158,7 +158,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("이메일과 비밀번호가 일치하면 200과 토큰을 반환한다")
-        void 성공() throws Exception {
+        void success() throws Exception {
             LoginRequest request = new LoginRequest("test@example.com", "password123");
             LoginResponse response = new LoginResponse("accessToken", "refreshToken");
 
@@ -176,7 +176,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("이메일 또는 비밀번호가 틀리면 401을 반환한다")
-        void 인증_실패_401() throws Exception {
+        void invalidCredentialsReturns401() throws Exception {
             LoginRequest request = new LoginRequest("test@example.com", "wrongPassword");
 
             given(authService.login(any(LoginRequest.class)))
@@ -192,7 +192,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("이메일이 비어있으면 400을 반환한다")
-        void 이메일_누락_400() throws Exception {
+        void missingEmailReturns400() throws Exception {
             LoginRequest request = new LoginRequest("", "password123");
 
             mockMvc.perform(post("/api/v1/auth/login")
@@ -209,7 +209,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("유효한 리프레시 토큰이면 200과 새 액세스 토큰을 반환한다")
-        void 성공() throws Exception {
+        void success() throws Exception {
             RefreshTokenRequest request = new RefreshTokenRequest("validRefreshToken");
             AccessTokenResponse response = new AccessTokenResponse("newAccessToken");
 
@@ -226,7 +226,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("유효하지 않은 리프레시 토큰이면 401을 반환한다")
-        void 유효하지_않은_토큰_401() throws Exception {
+        void invalidTokenReturns401() throws Exception {
             RefreshTokenRequest request = new RefreshTokenRequest("invalidToken");
 
             given(authService.refreshAccessToken(any(RefreshTokenRequest.class)))
@@ -242,7 +242,7 @@ class AuthControllerTest {
 
         @Test
         @DisplayName("리프레시 토큰이 비어있으면 400을 반환한다")
-        void 토큰_누락_400() throws Exception {
+        void missingTokenReturns400() throws Exception {
             RefreshTokenRequest request = new RefreshTokenRequest("");
 
             mockMvc.perform(post("/api/v1/auth/refresh")

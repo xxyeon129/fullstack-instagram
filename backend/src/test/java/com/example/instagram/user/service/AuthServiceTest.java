@@ -35,7 +35,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("AuthCommandService.signup에 위임한다")
-        void 위임() {
+        void delegates() {
             SignupRequest request = new SignupRequest("test@example.com", "ValidPass1!", "testuser");
             SignupResponse expected = new SignupResponse(1L, request.email(), request.username());
             given(authCommandService.signup(request)).willReturn(expected);
@@ -53,7 +53,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("AuthCommandService.login에 위임한다")
-        void 위임() {
+        void delegates() {
             LoginRequest request = new LoginRequest("test@example.com", "password123");
             LoginResponse expected = new LoginResponse("access", "refresh");
             given(authCommandService.login(request)).willReturn(expected);
@@ -71,7 +71,7 @@ class AuthServiceTest {
 
         @Test
         @DisplayName("AuthQueryService.refreshAccessToken에 위임한다")
-        void 위임() {
+        void delegates() {
             RefreshTokenRequest request = new RefreshTokenRequest("refresh");
             AccessTokenResponse expected = new AccessTokenResponse("newAccess");
             given(authQueryService.refreshAccessToken(request)).willReturn(expected);

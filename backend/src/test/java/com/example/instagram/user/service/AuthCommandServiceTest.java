@@ -61,7 +61,7 @@ class AuthCommandServiceTest {
 
         @Test
         @DisplayName("정상 요청이면 사용자 정보를 저장하고 응답을 반환한다")
-        void 성공() {
+        void success() {
             SignupRequest request = new SignupRequest("test@example.com", "ValidPass1!", "testuser");
             User savedUser = buildUser(1L, request.email(), request.username());
 
@@ -80,7 +80,7 @@ class AuthCommandServiceTest {
 
         @Test
         @DisplayName("이미 사용 중인 이메일이면 CONFLICT 예외를 던진다")
-        void 이메일_중복_예외() {
+        void duplicateEmailThrowsException() {
             SignupRequest request = new SignupRequest("dup@example.com", "ValidPass1!", "testuser");
             given(userRepository.existsByEmail(request.email())).willReturn(true);
 
@@ -92,7 +92,7 @@ class AuthCommandServiceTest {
 
         @Test
         @DisplayName("이미 사용 중인 사용자명이면 CONFLICT 예외를 던진다")
-        void 사용자명_중복_예외() {
+        void duplicateUsernameThrowsException() {
             SignupRequest request = new SignupRequest("new@example.com", "ValidPass1!", "dupuser");
             given(userRepository.existsByEmail(request.email())).willReturn(false);
             given(userRepository.existsByUsername(request.username())).willReturn(true);
@@ -110,7 +110,7 @@ class AuthCommandServiceTest {
 
         @Test
         @DisplayName("이메일과 비밀번호가 일치하면 액세스 토큰과 리프레시 토큰을 반환한다")
-        void 성공() {
+        void success() {
             LoginRequest request = new LoginRequest("test@example.com", "password123");
             User user = buildUser(1L, request.email(), "testuser");
 
@@ -129,7 +129,7 @@ class AuthCommandServiceTest {
 
         @Test
         @DisplayName("존재하지 않는 이메일이면 UNAUTHORIZED 예외를 던진다")
-        void 이메일_없음_예외() {
+        void missingEmailThrowsException() {
             LoginRequest request = new LoginRequest("notfound@example.com", "password123");
             given(userRepository.findByEmail(request.email())).willReturn(Optional.empty());
 
@@ -141,7 +141,7 @@ class AuthCommandServiceTest {
 
         @Test
         @DisplayName("비밀번호가 일치하지 않으면 UNAUTHORIZED 예외를 던진다")
-        void 비밀번호_불일치_예외() {
+        void passwordMismatchThrowsException() {
             LoginRequest request = new LoginRequest("test@example.com", "wrongPassword");
             User user = buildUser(1L, request.email(), "testuser");
 

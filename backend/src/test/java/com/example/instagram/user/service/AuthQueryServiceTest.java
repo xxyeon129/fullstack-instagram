@@ -49,7 +49,7 @@ class AuthQueryServiceTest {
 
         @Test
         @DisplayName("유효한 리프레시 토큰이면 새 액세스 토큰을 반환한다")
-        void 성공() {
+        void success() {
             RefreshTokenRequest request = new RefreshTokenRequest("validRefreshToken");
             User user = buildUser(1L, "test@example.com", "testuser");
 
@@ -66,7 +66,7 @@ class AuthQueryServiceTest {
 
         @Test
         @DisplayName("토큰 파싱에 실패하면 UNAUTHORIZED 예외를 던진다")
-        void 토큰_파싱_실패_예외() {
+        void tokenParsingFailureThrowsException() {
             RefreshTokenRequest request = new RefreshTokenRequest("invalidToken");
             given(jwtTokenProvider.getUserId(request.refreshToken())).willThrow(new RuntimeException("파싱 오류"));
 
@@ -78,7 +78,7 @@ class AuthQueryServiceTest {
 
         @Test
         @DisplayName("Redis에 저장된 토큰과 불일치하면 UNAUTHORIZED 예외를 던진다")
-        void 토큰_불일치_예외() {
+        void tokenMismatchThrowsException() {
             RefreshTokenRequest request = new RefreshTokenRequest("tokenA");
 
             given(jwtTokenProvider.getUserId(request.refreshToken())).willReturn(1L);
@@ -93,7 +93,7 @@ class AuthQueryServiceTest {
 
         @Test
         @DisplayName("Redis에 토큰이 없으면 UNAUTHORIZED 예외를 던진다")
-        void Redis에_토큰_없음_예외() {
+        void missingRedisTokenThrowsException() {
             RefreshTokenRequest request = new RefreshTokenRequest("someToken");
 
             given(jwtTokenProvider.getUserId(request.refreshToken())).willReturn(1L);
@@ -108,7 +108,7 @@ class AuthQueryServiceTest {
 
         @Test
         @DisplayName("토큰은 유효하나 사용자가 존재하지 않으면 UNAUTHORIZED 예외를 던진다")
-        void 사용자_없음_예외() {
+        void missingUserThrowsException() {
             RefreshTokenRequest request = new RefreshTokenRequest("validRefreshToken");
 
             given(jwtTokenProvider.getUserId(request.refreshToken())).willReturn(999L);
