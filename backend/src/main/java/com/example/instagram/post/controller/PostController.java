@@ -36,7 +36,7 @@ public class PostController {
             @RequestPart("image") MultipartFile image,
             @RequestParam(value = "caption", required = false) String caption,
             @AuthenticationPrincipal Long userId) {
-        PostResponse response = postService.create(userId, caption, image);
+        PostResponse response = postService.create_post(userId, caption, image);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok("게시물이 등록되었습니다.", response));
     }

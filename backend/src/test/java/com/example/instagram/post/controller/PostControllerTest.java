@@ -90,7 +90,7 @@ class PostControllerTest {
                     "fake-image".getBytes()
             );
 
-            given(postService.create(eq(1L), eq("hello"), any())).willReturn(SAMPLE);
+            given(postService.create_post(eq(1L), eq("hello"), any())).willReturn(SAMPLE);
 
             mockMvc.perform(multipart("/api/v1/posts")
                             .file(image)

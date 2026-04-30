@@ -3,7 +3,9 @@ package com.example.instagram.post.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.instagram.post.dto.PostResponse;
+import com.example.instagram.post.dto.PostUpdateRequest;
 import com.example.instagram.post.repository.PostRepository;
+import com.example.instagram.post.entity.Post;
 import com.example.instagram.post.storage.LocalImageStorage;
 import com.example.instagram.user.entity.User;
 import com.example.instagram.user.repository.UserRepository;
@@ -43,7 +45,7 @@ class PostServiceIntegrationTest {
         MockMultipartFile testImage = new MockMultipartFile("image", "testimg.png", "image/png", "png-bytes".getBytes());
 
         // when
-        PostResponse response = postService.create(author.getId(), "testCaption", testImage);
+        PostResponse response = postService.create_post(author.getId(), "testCaption", testImage);
 
         // then
         assertThat(postRepository.findById(response.id())).isPresent();
@@ -76,14 +78,14 @@ class PostServiceIntegrationTest {
     @DisplayName("게시물을 조회한다")
     void getById_success() throws Exception {
         // given
-        User author = userRepository.save(User.builder().email("test123@test.com").userName("test").password("testpw").build());
+        User author = userRepository.save(User.builder().email("test123@test.com").username("test").password("testpw").build());
         Post post = postRepository.save(Post.builder().user(author).caption("testCaption").imageStorageKey(author.getId() + "/saved.png").build());
 
         // when
         PostResponse response = postService.getById(post.getId());
 
         // then
-        assertThat(response.id()).isEqualTo(savedPost.getId());
+        assertThat(response.id()).isEqualTo(post.getId());
     }
 
     @Test
@@ -96,7 +98,7 @@ class PostServiceIntegrationTest {
     @DisplayName("게시물을 수정한다")
     void update_success () throws Exception {
         // given
-        User author = userRepository.save(User.builder().email("test123@test.com").userName("test").password("testpw").build());
+        User author = userRepository.save(User.builder().email("test123@test.com").username("test").password("testpw").build());
         Post post = postRepository.save(Post.builder().user(author).caption("testCaption").imageStorageKey(author.getId() + "/saved.png").build());
         PostUpdateRequest request = new PostUpdateRequest("after");
 
@@ -104,14 +106,14 @@ class PostServiceIntegrationTest {
         PostResponse response = postService.update(author.getId(), post.getId(), request);
 
         // then
-        assertThat(postResponse.caption()).isEqualTo("after");
+        assertThat(response.caption()).isEqualTo("after");
     }
 
     @Test
     @DisplayName("게시물을 삭제한다")
     void delete_success() throws Exception {
         // given
-        User author = userRepository.save(User.builder().email("test123@test.com").userName("test").password("testpw").build());
+        User author = userRepository.save(User.builder().email("test123@test.com").username("test").password("testpw").build());
         Post post = postRepository.save(Post.builder().user(author).caption("testCaption").imageStorageKey(author.getId() + "/saved.png").build());
 
         // when
