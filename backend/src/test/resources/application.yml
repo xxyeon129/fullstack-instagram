@@ -19,3 +19,9 @@ jwt:
   secret: ${JWT_SECRET:test-secret-key-must-be-long-enough-for-hmac-sha-256-algorithm-key-bytes}
   access-token-exp-minutes: 15
   refresh-token-exp-days: 7
+
+app:
+  storage:
+    type: local
+    local:
+      base-directory: ${java.io.tmpdir}/instagram-test-uploads

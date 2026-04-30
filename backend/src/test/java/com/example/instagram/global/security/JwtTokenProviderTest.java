@@ -22,7 +22,7 @@ class JwtTokenProviderTest {
 
     @Test
     @DisplayName("액세스 토큰 생성 후 사용자 ID 추출 성공")
-    void createAccessToken_성공() {
+    void createAccessToken_success() {
         String token = jwtTokenProvider.createAccessToken(1L, "test@example.com");
 
         Long userId = jwtTokenProvider.getUserId(token);
@@ -33,7 +33,7 @@ class JwtTokenProviderTest {
 
     @Test
     @DisplayName("리프레시 토큰 생성 후 사용자 ID 추출 성공")
-    void createRefreshToken_성공() {
+    void createRefreshToken_success() {
         String token = jwtTokenProvider.createRefreshToken(1L);
 
         Long userId = jwtTokenProvider.getUserId(token);
@@ -44,7 +44,7 @@ class JwtTokenProviderTest {
 
     @Test
     @DisplayName("액세스 토큰과 리프레시 토큰은 서로 다른 값을 가진다")
-    void accessToken과_refreshToken은_다르다() {
+    void accessTokenAndRefreshTokenAreDifferent() {
         String accessToken = jwtTokenProvider.createAccessToken(1L, "test@example.com");
         String refreshToken = jwtTokenProvider.createRefreshToken(1L);
 
@@ -53,14 +53,14 @@ class JwtTokenProviderTest {
 
     @Test
     @DisplayName("잘못된 형식의 토큰으로 사용자 ID 추출 시 예외 발생")
-    void getUserId_잘못된토큰_예외발생() {
+    void getUserId_invalidToken_throwsException() {
         assertThatThrownBy(() -> jwtTokenProvider.getUserId("invalid.token.value"))
                 .isInstanceOf(Exception.class);
     }
 
     @Test
     @DisplayName("빈 문자열 토큰으로 사용자 ID 추출 시 예외 발생")
-    void getUserId_빈토큰_예외발생() {
+    void getUserId_emptyToken_throwsException() {
         assertThatThrownBy(() -> jwtTokenProvider.getUserId(""))
                 .isInstanceOf(Exception.class);
     }

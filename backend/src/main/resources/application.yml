@@ -25,3 +25,9 @@ jwt:
 
 server:
   port: 8080
+
+app:
+  storage:
+    type: local
+    local:
+      base-directory: ${LOCAL_STORAGE_DIR:./uploads}
